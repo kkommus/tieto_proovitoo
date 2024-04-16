@@ -13,35 +13,14 @@ if ($conn->connect_error) {
     die("Ühendus ebaõnnestus: " . $conn->connect_error);
 }
 
-// Funktsioon, mis tagastab hinnangute keskmise
-function keskmine_hinne($conn, $restorani_id) {
-    $sql = "SELECT AVG(hinnang) AS keskmine FROM hinnangud WHERE restorani_id = $restorani_id";
-    $result = $conn->query($sql);
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        return round($row["keskmine"], 1);
-    } else {
-        return "-";
-    }
-}
+// Vaatame, milline leht on praegu avatud
+$current_page = isset($_GET['page']) ? $_GET['page'] : 1;
+$per_page = 10;
+$start = ($current_page - 1) * $per_page;
 
-// Kui vorm on esitatud, salvestame hinnangu
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nimi = $_POST["nimi"];
-    $kommentaar = $_POST["kommentaar"];
-    $hinnang = $_POST["hinnang"];
-    $restorani_id = $_POST["restorani_id"];
-    
-    // Lisame hinnangu andmebaasi
-    $sql = "INSERT INTO hinnangud (nimi, kommentaar, hinnang, restorani_id) VALUES ('$nimi', '$kommentaar', $hinnang, $restorani_id)";
-    if ($conn->query($sql) === TRUE) {
-        // Suuname tagasi avalehele
-        header("Location: index.php");
-        exit();
-    } else {
-        echo "Viga andmete salvestamisel: " . $conn->error;
-    }
-}
+// Küsime 10 söögikohta andmebaasist, alustades õigest kohast
+$sql = "SELECT * FROM restoranid LIMIT $start, $per_page";
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -50,73 +29,81 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Söögikohtade hindamine</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Lisa oma CSS siia */
+        th {
+            width: 33.33%; /* Jagame võrdselt kolme veeru vahel */
+            position: sticky;
+            top: 0;
+        }
+        th:first-child, td:first-child {
+            left: 0;
+            position: sticky;
+        }
+        th:nth-child(2), td:nth-child(2) {
+            left: 33.33%; /* Teine veerg hakkab kolmandiku laiusest alates */
+        }
+        th:nth-child(3), td:nth-child(3) {
+            left: 66.66%; /* Kolmas veerg hakkab kahe kolmandiku laiusest alates */
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
-    <h1>Söögikohtade hindamine</h1>
-    <h2>Avalikud hinnangud</h2>
-    <table>
-        <thead>
+    <h1 class="mt-5 mb-4 text-center">Söögikohtade hindamine</h1>
+    
+    <table class="table table-striped">
+        <thead class="thead-dark">
             <tr>
                 <th>Nimi</th>
-                <th>Asukoht</th>
-                <th>Keskmine hinne</th>
-                <th>Hinnatud kordi</th>
+                <th>Kommentaar</th>
+                <th>Hinnang</th>
             </tr>
         </thead>
         <tbody>
             <?php
-            // Küsime andmeid andmebaasist ja kuvame need tabelis
-            $sql = "SELECT * FROM restoranid";
-            $result = $conn->query($sql);
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
-                    $keskmine_hinne = keskmine_hinne($conn, $row["id"]);
-                    echo "<tr>";
+                    echo "<tr onclick='lisaHinnang(" . $row["id"] . ")'>";
                     echo "<td>" . $row["nimi"] . "</td>";
-                    echo "<td>" . $row["asukoht"] . "</td>";
-                    echo "<td>" . ($keskmine_hinne != "-" ? $keskmine_hinne : "-") . "</td>";
-                    echo "<td>" . $row["hinnangute_arv"] . "</td>";
+                    echo "<td>" . $row["kommentaar"] . "</td>";
+                    echo "<td>" . $row["hinnang"] . "</td>";
                     echo "</tr>";
                 }
             } else {
-                echo "<tr><td colspan='4'>Andmed puuduvad</td></tr>";
+                echo "<tr><td colspan='3'>Andmed puuduvad</td></tr>";
             }
             ?>
         </tbody>
     </table>
 
-    <h2>Sisesta oma hinnang</h2>
-    <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-        <label for="nimi">Sinu nimi:</label>
-        <input type="text" id="nimi" name="nimi" required><br><br>
-        <label for="kommentaar">Kommentaar:</label><br>
-        <textarea id="kommentaar" name="kommentaar" required></textarea><br><br>
-        <label for="hinnang">Hinnang (1-10):</label>
-        <input type="number" id="hinnang" name="hinnang" min="1" max="10" required><br><br>
-        <label for="restorani_id">Vali restoran:</label>
-        <select id="restorani_id" name="restorani_id">
-            <?php
-            // Küsime andmeid andmebaasist ja kuvame need rippmenüüs
-            $sql = "SELECT * FROM restoranid";
-            $result = $conn->query($sql);
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo "<option value='" . $row["id"] . "'>" . $row["nimi"] . "</option>";
-                }
-            } else {
-                echo "<option value=''>Andmed puuduvad</option>";
-            }
-            ?>
-        </select><br><br>
-        <input type="submit" value="Saada hinnang">
-    </form>
+    <div class="pagination d-flex justify-content-end">
+    <?php if ($current_page > 1): ?>
+        <a href="?page=<?php echo $current_page - 1; ?>" class="btn btn-primary">Eelmised</a>
+    <?php endif; ?>
+    <?php if ($result->num_rows == $per_page): ?>
+        <a href="?page=<?php echo $current_page + 1; ?>" class="btn btn-primary">Järgmised</a>
+    <?php endif; ?>
+</div>
 
-    <?php
-    // Sulgeme andmebaasi ühenduse
-    $conn->close();
-    ?>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // JavaScript funktsioon hinnangu lisamiseks
+        function lisaHinnang(restorani_id) {
+            window.location.href = "hinnang.php?restorani_id=" + restorani_id;
+        }
+    </script>
 </body>
 </html>
+
+<?php
+// Sulgeme andmebaasi ühenduse
+$conn->close();
+?>

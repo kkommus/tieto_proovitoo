@@ -1,75 +1,129 @@
-<?php
-// Andmebaasi ühendus
-$server = "localhost";
-$username = "keiti"; // asenda oma tegeliku kasutajanimega
-$password = "sh2mp00n"; // asenda oma tegeliku parooliga
-$database = "restoranid"; // asenda oma tegeliku andmebaasi nimega
-
-// Loome andmebaasi ühenduse
-$conn = new mysqli($server, $username, $password, $database);
-
-// Kontrollime ühendust
-if ($conn->connect_error) {
-    die("Ühendus ebaõnnestus: " . $conn->connect_error);
-}
-
-// Kui vorm on esitatud, salvestame hinnangu
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nimi = $_POST["nimi"];
-    $kommentaar = $_POST["kommentaar"];
-    $hinnang = $_POST["hinnang"];
-    $restorani_id = $_POST["restorani_id"];
-    
-    // Lisame hinnangu andmebaasi
-    $sql = "INSERT INTO hinnangud (nimi, kommentaar, hinnang, restorani_id) VALUES ('$nimi', '$kommentaar', $hinnang, $restorani_id)";
-    if ($conn->query($sql) === TRUE) {
-        // Suuname tagasi avalehele või kuhu iganes soovid
-        header("Location: index.php");
-        exit();
-    } else {
-        echo "Viga andmete salvestamisel: " . $conn->error;
-    }
-}
-?>
-
 <!DOCTYPE html>
 <html lang="et">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hinnangu andmine</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .star-input {
+            display: none;
+        }
+
+        .star-label {
+            font-size: 30px;
+            color: #ddd;
+            cursor: pointer;
+        }
+
+        .star-label:hover,
+        .star-label:hover ~ .star-label,
+        .star-input:checked ~ .star-label {
+            color: orange;
+        }
+    </style>
 </head>
 <body>
-    <h1>Anna hinnang restoranile</h1>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <?php
+                // Andmebaasi ühendus
+                $server = "localhost";
+                $username = "keiti"; // asenda oma tegeliku kasutajanimega
+                $password = "sh2mp00n"; // asenda oma tegeliku parooliga
+                $database = "restoranid"; // asenda oma tegeliku andmebaasi nimega
 
-    <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-        <label for="nimi">Sinu nimi:</label>
-        <input type="text" id="nimi" name="nimi" required><br><br>
-        <label for="kommentaar">Kommentaar:</label><br>
-        <textarea id="kommentaar" name="kommentaar" required></textarea><br><br>
-        <label for="hinnang">Hinnang (1-10):</label>
-        <input type="number" id="hinnang" name="hinnang" min="1" max="10" required><br><br>
-        <label for="restorani_id">Vali restoran:</label>
-        <select id="restorani_id" name="restorani_id">
-            <?php
-            // Küsime andmeid andmebaasist ja kuvame need rippmenüüs
-            $sql = "SELECT * FROM restoranid";
-            $result = $conn->query($sql);
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo "<option value='" . $row["id"] . "'>" . $row["nimi"] . "</option>";
+                // Loome andmebaasi ühenduse
+                $conn = new mysqli($server, $username, $password, $database);
+
+                // Kontrollime ühendust
+                if ($conn->connect_error) {
+                    die("Ühendus ebaõnnestus: " . $conn->connect_error);
                 }
-            } else {
-                echo "<option value=''>Andmed puuduvad</option>";
-            }
-            ?>
-        </select><br><br>
-        <input type="submit" value="Saada hinnang">
-    </form>
+
+                // Vaatame, kas restorani ID on määratud $_GET päringuga
+                if(isset($_GET['restorani_id'])) {
+                    $restorani_id = $_GET['restorani_id'];
+
+                    // Küsime andmebaasist restorani nime vastavalt ID-le
+                    $sql = "SELECT nimi FROM restoranid WHERE id = $restorani_id";
+                    $result = $conn->query($sql);
+
+                    if ($result->num_rows > 0) {
+                        $row = $result->fetch_assoc();
+                        $restorani_nimi = $row["nimi"];
+                    } else {
+                        $restorani_nimi = "Valitud restoran";
+                    }
+                } else {
+                    $restorani_nimi = "Valitud restoran";
+                }
+
+                // Salvestame hinnangu andmed, kui vorm on saatnud
+                if ($_SERVER["REQUEST_METHOD"] == "POST") {
+                    $nimi = $_POST['nimi'];
+                    $kommentaar = $_POST['kommentaar'];
+                    $hinnang = $_POST['hinnang'];
+
+                    // SQL päringu ettevalmistamine hinnangu salvestamiseks
+                    $sql = "INSERT INTO hinnangud (restorani_id, nimi, kommentaar, hinnang) VALUES ($restorani_id, '$nimi', '$kommentaar', $hinnang)";
+
+                    // Päringu käivitamine
+                    if ($conn->query($sql) === TRUE) {
+                        echo "<div class='alert alert-success' role='alert'>Hinnang edukalt salvestatud</div>";
+                    } else {
+                        echo "<div class='alert alert-danger' role='alert'>Viga: " . $sql . "<br>" . $conn->error . "</div>";
+                    }
+                }
+                ?>
+
+                <h1 class="mb-4">Anna hinnang restoranile: <?php echo htmlspecialchars($restorani_nimi); ?></h1>
+
+                <form method="post" action="">
+                    <input type="hidden" name="restorani_id" value="<?php echo htmlspecialchars($restorani_id); ?>">
+                    <div class="form-group">
+                        <label for="nimi">Sinu nimi:</label>
+                        <input type="text" class="form-control" id="nimi" name="nimi" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kommentaar">Kommentaar:</label>
+                        <textarea class="form-control" id="kommentaar" name="kommentaar" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="hinnang">Hinnang (1-10):</label><br>
+                        <?php for ($i = 10; $i >= 1; $i--): ?>
+                            <input type="radio" id="hinnang_<?php echo $i; ?>" class="star-input" name="hinnang" value="<?php echo $i; ?>" required>
+                            <label for="hinnang_<?php echo $i; ?>" class="star-label">&#9733;</label>
+                        <?php endfor; ?>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Saada hinnang</button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <?php
     // Sulgeme andmebaasi ühenduse
     $conn->close();
     ?>
+    <script>
+        // Valige kõik tähed
+        var starElements = document.querySelectorAll('.star-label');
+
+        // Lisage igale tähele kuulaja
+        for (var i = 0; i < starElements.length; i++) {
+            starElements[i].addEventListener('click', function() {
+                // Arvutage valitud tärnide arv
+                var selectedStars = Array.from(starElements).indexOf(this) + 1;
+
+                // Muutke see vastupidiseks
+                var reversedStars = 11 - selectedStars;
+
+                // Näidake vastupidist tärnide arvu
+                console.log('Valitud tärnide arv (vastupidine):', reversedStars);
+            });
+        }
+    </script>
 </body>
 </html>
