@@ -28,19 +28,13 @@
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <?php
-                // Andmebaasi ühendus
-                $server = "localhost";
-                $username = "keiti"; // asenda oma tegeliku kasutajanimega
-                $password = "sh2mp00n"; // asenda oma tegeliku parooliga
-                $database = "restoranid"; // asenda oma tegeliku andmebaasi nimega
+                // Ühendame andmebaasiga
+include("config.php");
 
-                // Loome andmebaasi ühenduse
-                $conn = new mysqli($server, $username, $password, $database);
-
-                // Kontrollime ühendust
-                if ($conn->connect_error) {
-                    die("Ühendus ebaõnnestus: " . $conn->connect_error);
-                }
+// Kontrollime ühendust
+if (!$yhendus) {
+    die("Ei saa ühendust andmebaasiga");
+}
 
                 // Vaatame, kas restorani ID on määratud $_GET päringuga
                 if(isset($_GET['restorani_id'])) {
@@ -91,7 +85,7 @@
                         <textarea class="form-control" id="kommentaar" name="kommentaar" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="hinnang">Hinnang (1-10):</label><br>
+                        <label for="hinnang">Hinnang (10-1):</label><br>
                         <?php for ($i = 10; $i >= 1; $i--): ?>
                             <input type="radio" id="hinnang_<?php echo $i; ?>" class="star-input" name="hinnang" value="<?php echo $i; ?>" required>
                             <label for="hinnang_<?php echo $i; ?>" class="star-label">&#9733;</label>
