@@ -18,10 +18,8 @@ if(isset($_GET['restorani_id'])) {
     $restorani_id = $_GET['restorani_id'];
 
     // Küsime andmebaasist restorani nime vastavalt ID-le
-    $stmt = $conn->prepare("SELECT nimi FROM restoranid WHERE id = ?");
-    $stmt->bind_param("i", $restorani_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $sql = "SELECT nimi FROM restoranid WHERE id = $restorani_id";
+    $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
@@ -33,10 +31,8 @@ if(isset($_GET['restorani_id'])) {
     $restorani_nimi = $_GET['restorani_nimi'];
 
     // Küsime andmebaasist restorani ID vastavalt nimele
-    $stmt = $conn->prepare("SELECT id FROM restoranid WHERE nimi = ?");
-    $stmt->bind_param("s", $restorani_nimi);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $sql = "SELECT id FROM restoranid WHERE nimi = '$restorani_nimi'";
+    $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
@@ -53,16 +49,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $hinnang = $_POST['hinnang'];
 
     // SQL päringu ettevalmistamine hinnangu salvestamiseks
-    $stmt = $conn->prepare("INSERT INTO hinnangud (restorani_id, nimi, kommentaar, hinnang) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("issi", $restorani_id, $nimi, $kommentaar, $hinnang);
-    if ($stmt->execute()) {
+    $sql = "INSERT INTO hinnangud (restorani_id, nimi, kommentaar, hinnang) VALUES ($restorani_id, '$nimi', '$kommentaar', $hinnang)";
+
+    // Päringu käivitamine
+    if ($conn->query($sql) === TRUE) {
         // Näita kinnitust hinnangu edukast salvestamisest
         echo "<div class='alert alert-success' role='alert'>Hinnang edukalt salvestatud</div>";
         
         // Suunake kasutaja tagasi index.php lehele
         echo "<script>window.location.href = 'index.php';</script>";
     } else {
-        echo "<div class='alert alert-danger' role='alert'>Viga: " . $stmt->error . "</div>";
+        echo "<div class='alert alert-danger' role='alert'>Viga: " . $sql . "<br>" . $conn->error . "</div>";
     }
 }
 ?>
@@ -143,5 +140,80 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         }
     </script>
+
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teiste hinnangud</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            margin-top: 50px;
+        }
+        .hinnang-box {
+            background-color: #f9f9f9;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 600px; /* Fikseeritud laius */
+        }
+        .hinnang-info {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .hinnang-nimi {
+            font-weight: bold;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="mb-4">Teiste hinnangud</h1>
+                <?php
+                // Ühendame andmebaasiga
+                include("config.php");
+
+                // Loome andmebaasi ühenduse
+                $conn = new mysqli($server, $username, $password, $database);
+
+                // Kontrollime ühendust
+                if ($conn->connect_error) {
+                    die("Ühendus ebaõnnestus: " . $conn->connect_error);
+                }
+
+                // Küsime kõik hinnangud andmebaasist
+                $sql = "SELECT * FROM hinnangud";
+                $result = $conn->query($sql);
+
+                // Kui hinnanguid leiti, kuvame need
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<div class='hinnang-box mx-auto'>"; // Horisontaalselt keskendatud kast
+                        echo "<div class='hinnang-info'>";
+                        echo "<span class='hinnang-nimi'>" . $row['nimi'] . "</span> (" . $row['hinnang'] . "/10)";
+                        echo "</div>";
+                        echo "<div class='hinnang-kommentaar'>" . $row['kommentaar'] . "</div>";
+                        echo "</div>";
+                    }
+                } else {
+                    echo "<p class='text-center'>Teiste hinnanguid ei leitud.</p>";
+                }
+
+                // Sulgeme andmebaasi ühenduse
+                $conn->close();
+                ?>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
 </body>
 </html>
