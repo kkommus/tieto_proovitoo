@@ -74,8 +74,8 @@ $total_pages = ceil($row['total'] / $limit);
             <tr>
                 <th><a href="?sort=nimi&order=<?php echo $order == 'ASC' ? 'DESC' : 'ASC'; ?>">Nimi</a></th>
                 <th><a href="?sort=asukoht&order=<?php echo $order == 'ASC' ? 'DESC' : 'ASC'; ?>">Asukoht</a></th>
-                <th><a href="?sort=keskmine_hinne&order=<?php echo $order == 'ASC' ? 'DESC' : 'ASC'; ?>">Keskmine hinne</a></th>
-                <th><a href="?sort=hinnangute_arv&order=<?php echo $order == 'ASC' ? 'DESC' : 'ASC'; ?>">Hinnatud kordi</a></th>
+                <th><a href="?sort=hinnang&order=<?php echo $order == 'ASC' ? 'DESC' : 'ASC'; ?>">Keskmine hinne</a></th>
+                <th><a href="?sort=kordade_arv&order=<?php echo $order == 'ASC' ? 'DESC' : 'ASC'; ?>">Hinnatud kordi</a></th>
                 <th>Toimingud</th>
             </tr>
         </thead>
@@ -85,8 +85,8 @@ $total_pages = ceil($row['total'] / $limit);
                     <tr>
                         <td><a href='adminhinda.php?id=<?php echo $row['id']; ?>'><?php echo $row['nimi']; ?></a></td>
                         <td><?php echo $row['asukoht']; ?></td>
-                        <td><?php echo $row['keskmine_hinne']; ?></td>
-                        <td><?php echo $row['hinnangute_arv']; ?></td>
+                        <td><?php echo $row['hinnang']; ?></td>
+                        <td><?php echo $row['kordade_arv']; ?></td>
                         <td>
                         <a href='muuda.php?id=<?php echo $row['id']; ?>' class="btn btn-warning">Muuda</a>
                         <a href='kustuta.php?id=<?php echo $row['id']; ?>' class="btn btn-danger" onclick="return confirm('Kas oled kindel, et soovid kustutada?')">Kustuta</a>

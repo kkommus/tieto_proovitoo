@@ -1,8 +1,6 @@
 <?php
-
 // Ühendame andmebaasiga
 include("config.php");
-
 
 // Loome andmebaasi ühenduse
 $conn = new mysqli($server, $username, $password, $database);
@@ -18,7 +16,11 @@ $per_page = 10;
 $start = ($current_page - 1) * $per_page;
 
 // Küsime 10 söögikohta andmebaasist, alustades õigest kohast
-$sql = "SELECT * FROM restoranid LIMIT $start, $per_page";
+$sql = "SELECT r.*, AVG(h.hinnang) AS keskmine_hinnang, COUNT(h.id) AS hinnangute_arv 
+        FROM restoranid r 
+        LEFT JOIN hinnangud h ON r.id = h.restorani_id 
+        GROUP BY r.id 
+        LIMIT $start, $per_page";
 $result = $conn->query($sql);
 ?>
 
@@ -86,11 +88,11 @@ $result = $conn->query($sql);
                     <?php
                     if ($result->num_rows > 0) {
                         while ($row = $result->fetch_assoc()) {
-                            echo "<tr onclick='lisaHinnang(" . $row["id"] . ")'>";
+                            echo "<tr>";
                             echo "<td>" . $row["nimi"] . "</td>";
                             echo "<td>" . $row["asukoht"] . "</td>";
-                            echo "<td>" . $row["hinnang"] . "</td>";
-                            echo "<td>" . $row["kordade_arv"] . "</td>";
+                            echo "<td>" . number_format($row["keskmine_hinnang"], 1) . "</td>";
+                            echo "<td>" . $row["hinnangute_arv"] . "</td>";
                             echo "</tr>";
                         }
                     } else {
@@ -116,12 +118,6 @@ $result = $conn->query($sql);
     <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // JavaScript funktsioon hinnangu lisamiseks
-        function lisaHinnang(restorani_id) {
-            window.location.href = "hinnang.php?restorani_id=" + restorani_id;
-        }
-    </script>
 </body>
 </html>
 

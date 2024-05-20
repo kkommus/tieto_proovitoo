@@ -51,9 +51,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['nimi'], $_POST['hinnan
 
         if ($stmt->execute()) {
             $paring = "UPDATE restoranid
-                   SET keskmine_hinne = (SELECT SUM(hinnang) FROM hinnangud WHERE restorani_id = ?) /
+                   SET hinnang = (SELECT SUM(hinnang) FROM hinnangud WHERE restorani_id = ?) /
                                          (SELECT COUNT(*) FROM hinnangud WHERE restorani_id = ?),
-                       hinnangute_arv = (SELECT COUNT(*) FROM hinnangud WHERE restorani_id = ?)
+                       kordade_arv = (SELECT COUNT(*) FROM hinnangud WHERE restorani_id = ?)
                    WHERE id = ?";
         $stmt = $yhendus->prepare($paring);
         $stmt->bind_param('iiii', $restorani_id, $restorani_id, $restorani_id, $restorani_id);
@@ -84,9 +84,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["del"]) && isset($_POST
 
             // Uuendame restorani keskmist hinda ja hindajate arvu
             $paring = "UPDATE restoranid
-                       SET keskmine_hinne = (SELECT SUM(hinnang) FROM hinnangud WHERE restorani_id = ?) /
+                       SET hinnang = (SELECT SUM(hinnang) FROM hinnangud WHERE restorani_id = ?) /
                                              (SELECT COUNT(*) FROM hinnangud WHERE restorani_id = ?),
-                           hinnangute_arv = (SELECT COUNT(*) FROM hinnangud WHERE restorani_id = ?)
+                           kordade_arv = (SELECT COUNT(*) FROM hinnangud WHERE restorani_id = ?)
                        WHERE id = ?";
             $stmt = $yhendus->prepare($paring);
             $stmt->bind_param('iiii', $restorani_id, $restorani_id, $restorani_id, $restorani_id);

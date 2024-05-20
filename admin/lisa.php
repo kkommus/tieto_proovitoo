@@ -2,21 +2,20 @@
 include("config.php");
 
 $errors = [];
-$nimi = $asukoht = $tyyp = '';
+$nimi = $asukoht = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nimi = $_POST['nimi'];
     $asukoht = $_POST['asukoht'];
-    $tyyp = $_POST['tyyp'];
 
-    if (empty($nimi) || empty($aadress) || empty($tyyp)) {
+    if (empty($nimi) || empty($asukoht)) {
         $errors[] = 'Kõik väljad on kohustuslikud!';
     }
 
     if (empty($errors)) {
-        $paring = "INSERT INTO restoranid (nimi, asukoht, tyyp) VALUES (?, ?, ?)";
+        $paring = "INSERT INTO restoranid (nimi, asukoht) VALUES (?, ?)";
         $stmt = $yhendus->prepare($paring);
-        $stmt->bind_param('sss', $nimi, $asukoht, $tyyp);
+        $stmt->bind_param('ss', $nimi, $asukoht);
 
         if ($stmt->execute()) {
             header("Location: admin.php");
@@ -54,18 +53,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <input type="text" class="form-control" id="nimi" name="nimi" value="<?php echo $nimi; ?>">
         </div>
         <div class="mb-3">
-            <label for="aadress" class="form-label">Asukoht</label>
+            <label for="asukoht" class="form-label">Asukoht</label>
             <input type="text" class="form-control" id="asukoht" name="asukoht" value="<?php echo $asukoht; ?>">
-        </div>
-        <div class="mb-3">
-            <label for="tyyp" class="form-label">Söögikoha tüüp</label>
-            <select class="form-control" id="tyyp" name="tyyp">
-                <option value="restoran">Restoran</option>
-                <option value="kohvik">Kohvik</option>
-                <option value="baari">Baar</option>
-                <option value="pubi">Pubi</option>
-                <option value="kiirtoidukoht">Kiirtoidukoht</option>
-            </select>
         </div>
         <button type="submit" class="btn btn-primary">Salvesta</button>
         <a href="admin.php" class="btn btn-secondary">Tagasi</a>

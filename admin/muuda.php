@@ -1,25 +1,36 @@
 <?php
 include("config.php");
 
-if(isset($_GET['id'])) {
-    $id = $_GET['id'];
+$nimi = '';
+$asukoht = '';
+$id = 0;
+
+if(isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $id = intval($_GET['id']);
     $paring = "SELECT * FROM restoranid WHERE id = ?";
     $stmt = $yhendus->prepare($paring);
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
 
-    $nimi = $row['nimi'];
-    $asukoht = $row['asukoht'];
-    $tyyp = $row['tyyp'];
-
-
+    if($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $nimi = $row['nimi'];
+        $asukoht = $row['asukoht'];
+    } else {
+        // ID-le vastav restoran ei leitud
+        echo "Restoran andmetega ID-ga $id ei leitud.";
+        exit();
+    }
+} else {
+    // ID puudub URL-is või ei ole õige
+    echo "Restoran ID-d ei ole määratud või on see vigane.";
+    exit();
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="et">
 <head>
     <meta charset="UTF-8">
     <title>Muuda restoran</title>
@@ -31,35 +42,21 @@ if(isset($_GET['id'])) {
     <h1 class="text-center">Muuda restorani</h1>
 
     <form action="update.php" method="post">
-        <input type="hidden" name="id" value="<?php echo $id; ?>">
+        <input type="hidden" name="id" value="<?php echo htmlspecialchars($id); ?>">
 
         <div class="mb-3">
             <label for="nimi" class="form-label">Nimi</label>
-            <input type="text" class="form-control" id="nimi" name="nimi" value="<?php echo $nimi; ?>">
+            <input type="text" class="form-control" id="nimi" name="nimi" value="<?php echo htmlspecialchars($nimi); ?>">
         </div>
 
         <div class="mb-3">
-            <label for="aadress" class="form-label">Asukoht</label>
-            <input type="text" class="form-control" id="asukoht" name="asukoht" value="<?php echo $asukoht; ?>">
-        </div>
-
-        <div class="mb-3">
-            <label for="tyyp" class="form-label">Söögikoha tüüp</label>
-            <select class="form-control" id="tyyp" name="tyyp">
-                <option value="restoran" <?php if($tyyp == "restoran") echo "selected"; ?>>Restoran</option>
-                <option value="kohvik" <?php if($tyyp == "kohvik") echo "selected"; ?>>Kohvik</option>
-                <option value="baari" <?php if($tyyp == "baari") echo "selected"; ?>>Baar</option>
-                <option value="pubi" <?php if($tyyp == "pubi") echo "selected"; ?>>Pubi</option>
-<option value="kiirtoidukoht" <?php if($tyyp == "kiirtoidukoht") echo "selected"; ?>>Kiirtoidukoht</option>
-<option value="pizzeria" <?php if($tyyp == "pizzeria") echo "selected"; ?>>Pizzeria</option>
-            </select>
+            <label for="asukoht" class="form-label">Asukoht</label>
+            <input type="text" class="form-control" id="asukoht" name="asukoht" value="<?php echo htmlspecialchars($asukoht); ?>">
         </div>
 
         <button type="submit" class="btn btn-primary">Salvesta</button>
         <a href="admin.php" class="btn btn-secondary">Tagasi</a>
     </form>
-
-
 
 </div>
 
